@@ -1,14 +1,30 @@
+mod annotations;
+
 use std::{
     fs, io,
     path::{Path, PathBuf},
 };
 
-const PLUGIN_INFO_FUNC_NAME: &'static str = "plugin_info";
+const PLUGIN_INFO_FUNC_NAME: &'static str = "atorrlinker_advertise";
 
-use pyo3::types::PyModule;
+use pyo3::{prelude::*, types::*};
 use thiserror::Error;
 
 use crate::config::Config;
+
+// Adds the path to pythons sys path list
+fn python_add_path(path: impl AsRef<Path>) {
+    pyo3::Python::attach(|py| {
+        let syspath = py
+            .import("sys")
+            .unwrap()
+            .getattr("path")
+            .unwrap()
+            .cast_into::<pyo3::types::PyList>()
+            .unwrap();
+        syspath.insert(0, path.as_ref()).unwrap();
+    });
+}
 
 #[derive(Error, Debug)]
 pub enum PluginError {
@@ -31,11 +47,24 @@ pub struct Plugin {
 impl Plugin {
     /// Requires full path to main python file
     pub fn from_path(path: impl AsRef<Path>) -> Self {
-        todo!("https://pyo3.rs/v0.27.1/python-from-rust/calling-existing-code.html")
+        // https://pyo3.rs/v0.27.1/python-from-rust/calling-existing-code.html
+        // Add module to pythons path 
+        python_add_path(&path);
+
+        Plugin::get_plugin_functions(&path);
     }
 
-    pub fn name_to_path(config: &Config, name: &str) -> PathBuf {
-        config.plugin_path.join(name).join("main.py")
+    pub fn name_to_path(base_path: impl AsRef<Path>, name: &str) -> PathBuf {
+        base_path.as_ref().join(name).join("main.py")
+    }
+
+    pub fn get_plugin_functions(path: impl AsRef<Path>) -> Vec<String> {
+        todo!("Call advertising function");
+        todo!("Parse annotations");
+    }
+
+    pub fn plugin_name_from_path(plugin_root: impl AsRef<Path>, name: String) -> PathBuf {
+        plugin_root.as_ref().join(name)
     }
 }
 
@@ -73,19 +102,10 @@ pub fn list_plugins(folder: impl AsRef<Path>) -> Result<Vec<(String, PathBuf)>, 
     Ok(plugin_paths)
 }
 
-pub fn plugin_name_from_path(plugin_root: impl AsRef<Path>, name: String) -> PathBuf {
-    plugin_root.as_ref().join(name)
-}
-
-pub fn get_plugin_functions(path: impl AsRef<Path>) -> Vec<String> {
-    todo!()
-}
-
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
 
     use super::*;
     use pyo3::{prelude::*, types::*};
-
 }
