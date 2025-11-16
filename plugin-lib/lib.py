@@ -60,7 +60,12 @@ def capture_function_annotations(func: Any) -> Dict[str, Any]:
 advertiser = Advertiser()
 
 # Define a function with complex annotations
-def example_function(num: Union[int, None] = None, text: str = "default") -> Union[str, None]:
+@advertiser.search()
+def example_function(num: Union[int, None] = None, text: str = "default", list_thing: list[int] = []) -> Union[str, None]:
     if num is not None:
         return f"Number: {num}, Text: {text}"
     return None
+
+import json
+json = json.dumps(advertiser.functions, skipkeys=True, indent=4)
+print(json)
